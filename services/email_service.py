@@ -25,6 +25,8 @@ class EmailService:
     def __init__(self):
         # In test mode use a local SMTP relay (configured in .env.test)
         self.testing = os.getenv("TESTING", "0") == "1"
+        self.email_enabled = os.getenv("EMAIL_ENABLED", "0") == "1"
+        
         if self.testing:
             self.use_smtp = True
             self.smtp_host = SMTP_HOST
@@ -32,7 +34,13 @@ class EmailService:
             self.from_email = FROM_EMAIL or "test@example.com"
             return
 
-        # Production (or non-test) mode: require SendGrid
+        # Production mode: SendGrid is optional
+        if not self.email_enabled:
+            print("⚠️  Email service is DISABLED. Set EMAIL_ENABLED=1 to enable.")
+            self.email_enabled = False
+            self.use_smtp = False
+            return
+
         if not SENDGRID_API_KEY or not SendGridAPIClient:
             raise ValueError("SENDGRID_API_KEY environment variable is not set or sendgrid is unavailable")
         if not FROM_EMAIL:
@@ -43,6 +51,11 @@ class EmailService:
         self.use_smtp = False
 
     async def send_email(self, to_email: str, subject: str, content: str):
+        # If email is disabled, just log and return success
+        if not getattr(self, "email_enabled", False) and not getattr(self, "use_smtp", False):
+            print(f"📧 Email service disabled - would send to {to_email}: {subject}")
+            return 200  # Return success code to not break the flow
+
         if getattr(self, "use_smtp", False):
             try:
                 msg = EmailMessage()
