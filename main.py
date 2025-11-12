@@ -75,18 +75,35 @@ def get_seconds_until_next_monday():
 # Events to connect and disconnect from database
 @app.on_event("startup")
 async def startup():
-    await database.connect()
+    try:
+        await database.connect()
+        logger.info("✅ Database connected successfully")
+    except Exception as e:
+        logger.error(f"❌ Failed to connect to database: {str(e)}")
+        raise
     
-    # Start the link checker
-    background_tasks = BackgroundTasks()
-    schedule_link_checks(background_tasks)
+    # Start the link checker (in background, don't block startup)
+    try:
+        background_tasks = BackgroundTasks()
+        schedule_link_checks(background_tasks)
+        logger.info("✅ Link checker scheduled")
+    except Exception as e:
+        logger.warning(f"⚠️  Link checker scheduling failed: {str(e)}")
     
-    # Start weekly report scheduler
-    background_tasks.add_task(generate_weekly_reports)
+    # Start weekly report scheduler (in background, don't block startup)
+    try:
+        background_tasks.add_task(generate_weekly_reports)
+        logger.info("✅ Weekly report scheduler started")
+    except Exception as e:
+        logger.warning(f"⚠️  Weekly report scheduler failed: {str(e)}")
 
 @app.on_event("shutdown")
 async def shutdown():
-    await database.disconnect()
+    try:
+        await database.disconnect()
+        logger.info("✅ Database disconnected successfully")
+    except Exception as e:
+        logger.error(f"❌ Error disconnecting from database: {str(e)}")
 
 # CORS - Allow frontend origin
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3002")

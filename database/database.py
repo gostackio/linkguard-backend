@@ -14,15 +14,23 @@ else:
 
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
+
+# Allow missing DATABASE_URL during module load (will fail at startup if truly missing)
 if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is not set")
+    DATABASE_URL = "postgresql://localhost/linkguard_placeholder"
+    print("⚠️  WARNING: DATABASE_URL not set, using placeholder. This will fail at startup.")
 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 # SQLAlchemy engine
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+try:
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+except Exception as e:
+    print(f"⚠️  WARNING: Failed to create engine: {str(e)}")
+    engine = None
+    SessionLocal = None
 
 # Async database instance
 database = Database(DATABASE_URL)
@@ -33,6 +41,8 @@ metadata = MetaData()
 
 # Dependency to get database session
 def get_db():
+    if SessionLocal is None:
+        raise RuntimeError("Database engine not initialized. Check DATABASE_URL.")
     db = SessionLocal()
     try:
         yield db
