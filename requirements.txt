@@ -14,3 +14,4 @@ asyncpg>=0.29.0
 alembic>=1.12.1
 sendgrid>=6.10.0
 bcrypt>=4.0.1
+chardet>=5.0.0

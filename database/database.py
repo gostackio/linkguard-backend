@@ -18,7 +18,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 # Allow missing DATABASE_URL during module load (will fail at startup if truly missing)
 if not DATABASE_URL:
     DATABASE_URL = "postgresql://localhost/linkguard_placeholder"
-    print("⚠️  WARNING: DATABASE_URL not set, using placeholder. This will fail at startup.")
+    print("[WARNING] DATABASE_URL not set, using placeholder. This will fail at startup.")
 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
@@ -31,7 +31,7 @@ if "supabase" in DATABASE_URL or ("@" in DATABASE_URL and "localhost" not in DAT
     elif "sslmode" not in DATABASE_URL:
         DATABASE_URL += "&sslmode=require"
 
-print(f"🗄️  Database URL configured (host: {DATABASE_URL.split('@')[1].split('/')[0] if '@' in DATABASE_URL else 'local'})")
+print(f"[INFO] Database URL configured (host: {DATABASE_URL.split('@')[1].split('/')[0] if '@' in DATABASE_URL else 'local'})")
 
 # SQLAlchemy engine
 try:
@@ -43,7 +43,7 @@ try:
     )
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 except Exception as e:
-    print(f"⚠️  WARNING: Failed to create engine: {str(e)}")
+    print(f"[WARNING] Failed to create engine: {str(e)}")
     engine = None
     SessionLocal = None
 

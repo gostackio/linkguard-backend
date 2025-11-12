@@ -36,7 +36,7 @@ class EmailService:
 
         # Production mode: SendGrid is optional
         if not self.email_enabled:
-            print("⚠️  Email service is DISABLED. Set EMAIL_ENABLED=1 to enable.")
+            print("[WARNING] Email service is DISABLED. Set EMAIL_ENABLED=1 to enable.")
             self.email_enabled = False
             self.use_smtp = False
             return
