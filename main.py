@@ -1,50 +1,86 @@
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, status, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-from typing import List
-import httpx
-import os
-import csv
-import io
-import asyncio
+import sys
 import logging
-import jwt
-from datetime import datetime, timezone, timedelta
-from datetime import datetime, timezone, timedelta
-from jwt.exceptions import PyJWTError
-from database.database import SessionLocal
-from database.models import UserNotificationSettings
-from auth.auth import create_access_token, get_current_user, get_current_active_user, verify_password, get_password_hash
-from utils.url_validator import URLValidator
+import os
 
-from services.email_service import email_service
-from services.link_checker import schedule_link_checks
-from services.link_check_service import LinkCheckService
-from services.weekly_report_service import WeeklyReportService
-from utils.url_validator import URLValidator
-from utils.csv_validator import CSVValidator
-from routers import admin
-
-# Set up logging
+# Set up logging early
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+try:
+    from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, status, BackgroundTasks
+    from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.security import OAuth2PasswordRequestForm
+    from sqlalchemy.orm import Session
+    from typing import List
+    import httpx
+    import csv
+    import io
+    import asyncio
+    import jwt
+    from datetime import datetime, timezone, timedelta
+    from jwt.exceptions import PyJWTError
+    logger.info("✅ Core imports successful")
+except Exception as e:
+    logger.error(f"❌ Failed to import core modules: {str(e)}")
+    sys.exit(1)
+
+try:
+    from database.database import SessionLocal, engine, get_db, database
+    from database.models import User, Link, Alert, LinkStatus, UserNotificationSettings
+    logger.info("✅ Database imports successful")
+except Exception as e:
+    logger.error(f"❌ Failed to import database modules: {str(e)}")
+    sys.exit(1)
+
+try:
+    from schemas import (
+        UserCreate, UserResponse, LinkCreate, LinkUpdate, LinkResponse,
+        AlertCreate, AlertResponse, AlertSettings, PasswordResetRequest,
+        PasswordReset, LinkCheck, LinkStatusResponse
+    )
+    logger.info("✅ Schema imports successful")
+except Exception as e:
+    logger.error(f"❌ Failed to import schemas: {str(e)}")
+    sys.exit(1)
+
+try:
+    from auth.auth import (
+        create_access_token, get_current_user, get_current_active_user, 
+        verify_password, get_password_hash
+    )
+    logger.info("✅ Auth imports successful")
+except Exception as e:
+    logger.error(f"❌ Failed to import auth: {str(e)}")
+    sys.exit(1)
+
+try:
+    from utils.url_validator import URLValidator
+    from utils.csv_validator import CSVValidator
+    logger.info("✅ Utils imports successful")
+except Exception as e:
+    logger.error(f"❌ Failed to import utils: {str(e)}")
+    sys.exit(1)
+
+try:
+    from services.email_service import email_service
+    from services.link_checker import schedule_link_checks
+    from services.link_check_service import LinkCheckService
+    from services.weekly_report_service import WeeklyReportService
+    logger.info("✅ Services imports successful")
+except Exception as e:
+    logger.error(f"❌ Failed to import services: {str(e)}")
+    sys.exit(1)
+
+try:
+    from routers import admin
+    logger.info("✅ Router imports successful")
+except Exception as e:
+    logger.error(f"❌ Failed to import routers: {str(e)}")
+    sys.exit(1)
 
 # JWT Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
-
-from database.database import engine, get_db, database
-from database.models import User, Link, Alert, LinkStatus
-from schemas import (
-    UserCreate, UserResponse, LinkCreate, LinkUpdate, LinkResponse,
-    AlertCreate, AlertResponse, AlertSettings, PasswordResetRequest,
-    PasswordReset, LinkCheck, LinkStatusResponse
-)
-from auth.auth import (
-    get_current_user, get_current_active_user, verify_password,
-    get_password_hash, create_access_token
-)
 
 # Initialize FastAPI app
 app = FastAPI(title="LinkGuard API")
