@@ -1,6 +1,9 @@
 # Use Python 3.11 slim image
 FROM python:3.11-slim
 
+# Build timestamp - Forces fresh deployment
+# Build: 2025-11-12T06:15:00Z
+
 # Set working directory
 WORKDIR /app
 
